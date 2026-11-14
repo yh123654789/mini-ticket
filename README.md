@@ -302,6 +302,23 @@ npm run build       # vue-tsc 类型检查 + vite 构建
 npm run test:unit   # StatusBadge 组件测试（3 个用例）
 ```
 
+### 6.1 按验收清单逐条自测的结果
+
+下面这份是在本机跑起来（非容器）后逐条打的，命令等价于验收时会执行的操作：
+
+| 验收项 | 实测结果 |
+| --- | --- |
+| ① `docker compose up --build` 能启动 | ⚠️ 未验证（网络原因，见第 7 节） |
+| ② 预置账号能登录、未登录被拒 | ✅ alice / bob 均登录成功；无 token 访问 `/api/tickets` → 401；错误密码 → 401 |
+| ③ 创建工单生成 mock AI 摘要与分类 | ✅ `category=bug`、`ai_status=ok`、摘要 58 字；「希望支持导出 Excel」→ `feature` |
+| ④ AI 配错地址仍能建单、降级生效 | ✅ 把 `AI_BASE_URL` 指向死地址后：HTTP 201、`ai_status=failed`、`category=other`、摘要退化为原文截断（60 字），阻塞 2.1 秒后返回 |
+| ⑤ 分页 + 状态筛选 + 优先级筛选 | ✅ 7 条数据，`page_size=2` 返回 2 条；`status=done` → 1 条；`priority=high` → 3 条；组合筛选 → 1 条 |
+| ⑥ 普通用户看不到别人的工单 | ✅ bob 列表 `total=0`；读 alice 工单 → 404；改 alice 工单 → 404 |
+| ⑦ 状态更新可用、非法输入有明确错误 | ✅ open→in_progress 成功；`"closed"` → 422 且带 `detail`/`errors`；空白标题 → 422 |
+| ⑧ 后端测试能跑通 | ✅ `pytest` 21 passed |
+| ⑨ README 能照着完成启动与验证 | ✅ 本文档即验证路径 |
+| ⑩ 代码结构 / 提交记录 / AI 使用说明 | ✅ 10+ 个语义化提交，见第 8 节 |
+
 ---
 
 ## 7. 取舍与未完成项
