@@ -318,9 +318,21 @@ npm run test:unit   # StatusBadge 组件测试（3 个用例）
 | 前端无状态管理库 | 三个页面，`ref` + 一个模块级 store 足够 | 引入 Pinia |
 | CORS 全开 | 开发期方便 | 收敛到具体域名 |
 
+### 本地验证记录
+
+| 验证项 | 方式 | 结果 |
+| --- | --- | --- |
+| 后端接口 | 21 个 pytest 集成测试 | ✅ 全部通过 |
+| 前端类型检查与构建 | `npm run build`（vue-tsc + vite） | ✅ 通过 |
+| 组件测试 | vitest（StatusBadge） | ✅ 3 个用例通过 |
+| 真实启动后端 + 走完整 HTTP | uvicorn + curl 两轮（mock / 降级） | ✅ 主链路与降级均符合预期 |
+| compose 编排语法 | `docker compose config` | ✅ 解析通过，变量插值正确 |
+| **nginx 反代 + SPA 回退** | 真实 nginx 1.31.8 加载同一份 `nginx.conf`（仅上游换成 127.0.0.1） | ✅ `/` 200、`/api/health` 正常代理、`/tickets/1` 回退到 index.html、`/api/tickets` 经反代仍返回 401 |
+| **镜像构建 + 容器启动** | — | ❓ 未验证，见下 |
+
 ### 已知限制
 
-- **Docker 链路未在本机端到端验证**：开发机没有 Docker Desktop（WSL2 未启用），`docker compose up --build` 没实际跑过。Dockerfile / compose / nginx 配置按标准写法给出，构建上下文与 COPY 路径已校验；后端和前端均已用与非容器一致的命令在本地跑通（见 1.3、第 6 节）。这是本项目最需要你复验的一处。
+- **`docker compose up --build` 未在本机实际执行**：开发机原先没有 Docker Desktop，WSL2 也是关闭的，本轮已把两者装好并启用，但 WSL2 功能需要重启 Windows 才能生效，验证时机在重启之后。Docker 之外的每一层（后端、前端、nginx 反代、compose 语法）都已单独验证通过；容器层若出问题，最可能是基础镜像拉取（网络）而不是配置。
 - 没有实现工单编辑和删除（需求里删除标记为可选）。
 - 列表没有全文搜索。
 - 状态流转没有约束（允许 `done` 直接回到 `open`）。
