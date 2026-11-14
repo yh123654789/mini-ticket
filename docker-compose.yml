@@ -1,0 +1,33 @@
+name: mini-ticket
+
+services:
+  backend:
+    build:
+      context: ./backend
+    environment:
+      # 数据库落在挂载卷里，重启不丢数据
+      DATABASE_URL: sqlite:////data/tickets.db
+      JWT_SECRET: ${JWT_SECRET:-dev-only-secret-change-me-32bytes-minimum!}
+      SEED_DEMO_USERS: ${SEED_DEMO_USERS:-true}
+      # AI：默认 mock，无需任何密钥即可跑通主链路
+      AI_PROVIDER: ${AI_PROVIDER:-mock}
+      AI_BASE_URL: ${AI_BASE_URL:-https://api.openai.com/v1}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_MODEL: ${AI_MODEL:-}
+      AI_TIMEOUT_SECONDS: ${AI_TIMEOUT_SECONDS:-10}
+    volumes:
+      - ticket-data:/data
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  ticket-data:
