@@ -332,7 +332,11 @@ npm run test:unit   # StatusBadge 组件测试（3 个用例）
 
 ### 已知限制
 
-- **`docker compose up --build` 未在本机实际执行**：开发机原先没有 Docker Desktop，WSL2 也是关闭的，本轮已把两者装好并启用，但 WSL2 功能需要重启 Windows 才能生效，验证时机在重启之后。Docker 之外的每一层（后端、前端、nginx 反代、compose 语法）都已单独验证通过；容器层若出问题，最可能是基础镜像拉取（网络）而不是配置。
+- **`docker compose up --build` 未在本机实际执行**，卡在环境而不是代码：
+  - Docker Desktop 已安装（29.9.3 / Compose v5.7.0），WSL2 与虚拟化平台两个 Windows 功能已启用；
+  - 但 WSL 运行时要另外下载运行时包（约 350 MB），实测本机到 Microsoft CDN 只有约 0.06 MB/s，预计 1.5 小时以上，未能完成；
+  - 另外 `registry-1.docker.io` 在本机网络下直接超时，即使 Docker 起来，拉 `python:3.13-slim` 等基础镜像也会失败。
+  - 换到网络通畅的环境（或有代理）后，`docker compose up --build` 应当可以直接跑通；Docker 之外的每一层都已在本地用真实组件验证（见上表）。
 - 没有实现工单编辑和删除（需求里删除标记为可选）。
 - 列表没有全文搜索。
 - 状态流转没有约束（允许 `done` 直接回到 `open`）。
