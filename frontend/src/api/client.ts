@@ -29,7 +29,9 @@ interface RequestOptions {
 }
 
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const url = new URL(path, window.location.origin)
+  // 本地/容器部署时走同源（nginx 或 vite 代理）；静态托管时用 VITE_API_BASE 指向独立的后端域名
+  const base = import.meta.env.VITE_API_BASE || window.location.origin
+  const url = new URL(path, base)
   if (options.query) {
     for (const [key, value] of Object.entries(options.query)) {
       if (value !== undefined && value !== '') {
