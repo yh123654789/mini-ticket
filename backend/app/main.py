@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from .config import get_settings
 from .database import init_db
@@ -75,3 +77,19 @@ app.include_router(tickets.router)
 @app.get("/api/health", tags=["meta"], summary="健康检查")
 def health() -> dict[str, str]:
     return {"status": "ok", "ai_provider": get_settings().ai_provider}
+
+
+# ---------------- 单机部署：把前端静态文件也交给 FastAPI 发 ----------------
+# 本地 / Docker Compose 用 nginx 代理时，这个目录不存在，下面整段自动跳过。
+STATIC_DIR = Path(__file__).resolve().parent / "static"
+
+if STATIC_DIR.is_dir():
+    app.mount("/assets", StaticFiles(directory=STATIC_DIR / "assets"), name="assets")
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    def spa_fallback(full_path: str):
+        """找不到的路径一律回 index.html，交给前端路由处理。"""
+        candidate = STATIC_DIR / full_path
+        if full_path and candidate.is_file():
+            return FileResponse(candidate)
+        return FileResponse(STATIC_DIR / "index.html")
