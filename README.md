@@ -15,7 +15,7 @@ https://walt-founder-cards-applicant.trycloudflare.com
 
 登录：`alice@example.com` / `alice123`　或　`bob@example.com` / `bob123`
 
-> 说明：这是内网穿透出来的**临时**公网地址（Cloudflare Quick Tunnel），指向一台运行着 `docker compose` 的机器，机器关掉就失效。项目本身可以部署到任意装有 Docker 的服务器，步骤见 1.1.1。
+> 演示地址通过 Cloudflare Tunnel 映射，随演示机启停；项目本身可部署到任意装有 Docker 的服务器或容器平台。
 
 ---
 
@@ -28,29 +28,15 @@ cp .env.example .env        # Windows PowerShell: Copy-Item .env.example .env
 docker compose up --build
 ```
 
-启动后（**在你自己电脑上**打开这几个地址）：
+启动完成后，Docker 会把容器内的 80 端口映射到本机 **8080** 端口：
 
-| 地址 | 说明 |
+| 路径 | 说明 |
 | --- | --- |
-| http://localhost:8080 | 前端页面 |
-| http://localhost:8080/api/docs | Swagger 交互式文档 |
-| http://localhost:8080/api/health | 健康检查 |
+| `/` | 前端页面 |
+| `/api/docs` | Swagger 交互式文档 |
+| `/api/health` | 健康检查 |
 
-### 1.1.1 关于 `localhost`：别人怎么打开
-
-**`localhost` 永远指「运行这个服务的这台电脑」**，不是一个公网地址。所以：
-
-| 场景 | 怎么做 |
-| --- | --- |
-| **评审 / 老师要跑起来看** | 他拿到项目后，在**他的电脑**上执行 `docker compose up --build`，然后打开 `http://localhost:8080` —— 这时 localhost 指的是他的电脑 |
-| **同一个 WiFi 下的同学想直接看** | 你这边跑着服务，他浏览器打开 `http://<你的局域网IP>:8080`，例如 `http://192.168.1.9:8080` |
-| **不在同一网络、要发链接给对方** | 需要部署到公网服务器，或用内网穿透工具（cloudflared / ngrok）临时映射一个公网地址 |
-
-查看自己的局域网 IP：
-
-```powershell
-ipconfig | findstr IPv4
-```
+端口可以在 `.env` 里用 `FRONTEND_PORT` 改。
 
 ### 1.2 预置账号
 
@@ -76,7 +62,7 @@ uvicorn app.main:app --reload --port 8000
 # 前端（另开一个终端）
 cd frontend
 npm install
-npm run dev                       # http://localhost:5173，已配置 /api 反向代理到 8000
+npm run dev     # 前端开发服务器（5173 端口），已配置 /api 反向代理
 ```
 
 ---
@@ -154,8 +140,14 @@ mini-ticket/
 
 ### 3.1 登录
 
+下面的示例用 `$BASE` 代表你的访问地址：
+
 ```bash
-curl -X POST http://localhost:8080/api/auth/login \
+BASE="https://walt-founder-cards-applicant.trycloudflare.com"
+```
+
+```bash
+curl -X POST "$BASE/api/auth/login" \
   -H "Content-Type: application/json" \
   -d '{"email":"alice@example.com","password":"alice123"}'
 ```
@@ -171,7 +163,7 @@ curl -X POST http://localhost:8080/api/auth/login \
 ### 3.2 创建工单
 
 ```bash
-curl -X POST http://localhost:8080/api/tickets \
+curl -X POST "$BASE/api/tickets" \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
   -d '{"title":"登录后报 500","description":"点击登录按钮后页面报 500，控制台没有信息。","priority":"high"}'
 ```
@@ -194,7 +186,7 @@ curl -X POST http://localhost:8080/api/tickets \
 ### 3.3 列表（分页 + 筛选）
 
 ```bash
-curl "http://localhost:8080/api/tickets?status=open&priority=high&page=1&page_size=10" \
+curl "$BASE/api/tickets?status=open&priority=high&page=1&page_size=10" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
