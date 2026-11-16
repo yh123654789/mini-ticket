@@ -18,13 +18,29 @@ cp .env.example .env        # Windows PowerShell: Copy-Item .env.example .env
 docker compose up --build
 ```
 
-启动后：
+启动后（**在你自己电脑上**打开这几个地址）：
 
 | 地址 | 说明 |
 | --- | --- |
 | http://localhost:8080 | 前端页面 |
 | http://localhost:8080/api/docs | Swagger 交互式文档 |
 | http://localhost:8080/api/health | 健康检查 |
+
+### 1.1.1 关于 `localhost`：别人怎么打开
+
+**`localhost` 永远指「运行这个服务的这台电脑」**，不是一个公网地址。所以：
+
+| 场景 | 怎么做 |
+| --- | --- |
+| **评审 / 老师要跑起来看** | 他拿到项目后，在**他的电脑**上执行 `docker compose up --build`，然后打开 `http://localhost:8080` —— 这时 localhost 指的是他的电脑 |
+| **同一个 WiFi 下的同学想直接看** | 你这边跑着服务，他浏览器打开 `http://<你的局域网IP>:8080`，例如 `http://192.168.1.9:8080` |
+| **不在同一网络、要发链接给对方** | 需要部署到公网服务器，或用内网穿透工具（cloudflared / ngrok）临时映射一个公网地址 |
+
+查看自己的局域网 IP：
+
+```powershell
+ipconfig | findstr IPv4
+```
 
 ### 1.2 预置账号
 
