@@ -308,7 +308,7 @@ npm run test:unit   # StatusBadge 组件测试（3 个用例）
 
 | 验收项 | 实测结果 |
 | --- | --- |
-| ① `docker compose up --build` 能启动 | ⚠️ 未验证（网络原因，见第 7 节） |
+| ① `docker compose up --build` 能启动 | ✅ 镜像构建成功，backend `healthy`，frontend 监听 8080；`/`、`/api/health`、`/tickets/1` 均 200 |
 | ② 预置账号能登录、未登录被拒 | ✅ alice / bob 均登录成功；无 token 访问 `/api/tickets` → 401；错误密码 → 401 |
 | ③ 创建工单生成 mock AI 摘要与分类 | ✅ `category=bug`、`ai_status=ok`、摘要 58 字；「希望支持导出 Excel」→ `feature` |
 | ④ AI 配错地址仍能建单、降级生效 | ✅ 把 `AI_BASE_URL` 指向死地址后：HTTP 201、`ai_status=failed`、`category=other`、摘要退化为原文截断（60 字），阻塞 2.1 秒后返回 |
@@ -345,15 +345,12 @@ npm run test:unit   # StatusBadge 组件测试（3 个用例）
 | 真实启动后端 + 走完整 HTTP | uvicorn + curl 两轮（mock / 降级） | ✅ 主链路与降级均符合预期 |
 | compose 编排语法 | `docker compose config` | ✅ 解析通过，变量插值正确 |
 | **nginx 反代 + SPA 回退** | 真实 nginx 1.31.8 加载同一份 `nginx.conf`（仅上游换成 127.0.0.1） | ✅ `/` 200、`/api/health` 正常代理、`/tickets/1` 回退到 index.html、`/api/tickets` 经反代仍返回 401 |
-| **镜像构建 + 容器启动** | — | ❓ 未验证，见下 |
+| **镜像构建 + 容器启动** | `docker compose up --build`（真实执行） | ✅ 两个镜像构建成功；backend 容器 `healthy`；frontend 映射 8080 |
 
 ### 已知限制
 
-- **`docker compose up --build` 未在本机实际执行**，卡在环境而不是代码：
-  - Docker Desktop 已安装（29.9.3 / Compose v5.7.0），WSL2 与虚拟化平台两个 Windows 功能已启用；
-  - 但 WSL 运行时要另外下载运行时包（约 350 MB），实测本机到 Microsoft CDN 只有约 0.06 MB/s，预计 1.5 小时以上，未能完成；
-  - 另外 `registry-1.docker.io` 在本机网络下直接超时，即使 Docker 起来，拉 `python:3.13-slim` 等基础镜像也会失败。
-  - 换到网络通畅的环境（或有代理）后，`docker compose up --build` 应当可以直接跑通；Docker 之外的每一层都已在本地用真实组件验证（见上表）。
+- 基础镜像来自 Docker Hub。在国内网络下直连 `registry-1.docker.io` 可能超时，需要给 Docker 配镜像加速器（本项目验证时用的是 `https://docker.m.daocloud.io`），配好后 `docker compose up --build` 可正常拉取。
+- 首次构建需要下载基础镜像（python 3.13-slim / node 22-alpine / nginx 1.27-alpine，约 150 MB）并安装依赖，耗时取决于网络。
 - 没有实现工单编辑和删除（需求里删除标记为可选）。
 - 列表没有全文搜索。
 - 状态流转没有约束（允许 `done` 直接回到 `open`）。
@@ -384,7 +381,7 @@ npm run test:unit   # StatusBadge 组件测试（3 个用例）
 ### AI 在哪些环节不可靠
 
 1. **版本号**：AI 容易给出不存在的依赖版本；本项目依赖一律写成范围（`>=x,<y`），由 pip/npm 实际解析。
-2. **环境差异**：AI 无法感知本机没有 Docker，容易写出「已验证」的结论 —— 所以第 7 节把这一条如实写出来。
+2. **环境差异**：AI 容易把「在我这边跑通了」当成「在目标环境也能跑」——容器、WSL、镜像源这些前置条件它感知不到。本项目把验证拆成「配置正确」和「真实跑通」两层分别记录，就是为此。
 3. **编码问题**：中文乱码时 AI 第一反应容易误判为服务端 bug，实际要先确认是终端/客户端的解码问题。
 4. **测试是否真的会失败**：AI 写的测试有时只断言 200，不对内容做断言；本项目补了字段级断言（分类、摘要长度、`ai_status`、total 计数）。
 
