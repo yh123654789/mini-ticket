@@ -7,6 +7,16 @@
 - 鉴权：JWT（bcrypt 存储密码哈希）
 - AI：可插拔 Provider（`mock` / `openai-compatible`），失败自动降级
 
+## 0. 在线演示（免安装，直接打开）
+
+```
+https://walt-founder-cards-applicant.trycloudflare.com
+```
+
+登录：`alice@example.com` / `alice123`　或　`bob@example.com` / `bob123`
+
+> 说明：这是内网穿透出来的**临时**公网地址（Cloudflare Quick Tunnel），指向一台运行着 `docker compose` 的机器，机器关掉就失效。项目本身可以部署到任意装有 Docker 的服务器，步骤见 1.1.1。
+
 ---
 
 ## 1. 快速开始
